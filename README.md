@@ -11,18 +11,26 @@ From the app checkout: `python3 -m http.server 4173 --directory website`, then
 open <http://localhost:4173>. No build tools, package installation, analytics,
 third-party JavaScript, or runtime font requests are needed.
 
-The hero is an illustrative WebGL 1 stock study, with film curves, live grain,
-halation, vignette, subtle five-frame registration and expired-film light leak.
-It approximates the native stocks; it is not a port of the Metal pipeline or an
-app screenshot. The source photo is static. Select SUMI, MIST or KARE; adjust
-exposure; pause motion; press the shutter for a demo capture. The demo saves
-nothing. Offscreen/hidden rendering is suspended, GPU resolution is capped,
-reduced-motion preferences start the demo paused, and a still image remains
-visible when WebGL is unavailable. The orange ticker also pauses with the demo.
+The page is a single matte surface with a giant recessed KURO wordmark. A
+WebGL shader renders machined cut edges, frosted acrylic, RGB LCD subpixels,
+softbox reflections and independently drifting light behind each letter. It
+uses the app tab bar's material vocabulary; it is a browser approximation of
+those materials rather than a direct port of the Metal pipeline.
+
+Move the pointer to shift the lighting and parallax. Hold the wordmark (or
+hold Space/Enter while focused) to bring the LCDs closer to the acrylic. The
+small top-right control pauses/resumes motion. Reduced-motion preferences
+start the scene paused. Rendering stops while the page is hidden, caps at 30
+fps and 1800 pixels on the longest edge, and uses at most 1.5x device resolution.
+A static CSS wordmark remains available without WebGL. No camera permission,
+video, photo asset, analytics, or third-party runtime dependencies are used.
+
+`app.js` owns only the material renderer; `waitlist.js` owns signup and privacy
+interactions so changes to the visual do not affect the backend contract.
 
 ## Waitlist
 
-`app.js` calls the `kuro-waitlist` Supabase Edge Function in KuroApp. No API key
+`waitlist.js` calls the `kuro-waitlist` Supabase Edge Function in KuroApp. No API key
 is included in the public site. The function uses its environment's service-role
 key to call a service-only SQL function. The migration enables RLS and revokes
 all visitor access to the email and limiter tables. Existing addresses are not
@@ -64,9 +72,10 @@ real App Store/Play Store/TestFlight links exist.
 
 ## Assets
 
-`assets/after-rain.jpg` was generated with the built-in imagegen tool. Prompt:
-
-> Use case: photorealistic-natural. Asset type: photograph for an indie analog loop camera app landing page, later treated with live WebGL film grain. Create a cinematic candid 35mm street photograph of a lone cyclist riding through a narrow Tokyo backstreet after rain at blue hour, side-on three-quarter composition, cyclist in right middle of image, beautiful glowing red-orange lanterns and one small warmly lit shop on the left, dark concrete and overhead wires, wet ground catching neon reflections, a slightly blurred sense of movement, rich teal shadows and warm amber lights. An authentic quiet accidental moment, artful film photography, natural fine grain, restrained colors, deep dark shadows with readable detail. Landscape 3:2 photo, no borders, no graphic layout, no captions, no recognizable brands, no readable text. Should feel human and imperfect rather than glossy futuristic cyberpunk. Small cyclist full body visible with plenty of streetscape.
+The wordmark's signed-distance texture is generated at runtime from the
+self-hosted Barlow Condensed font using an exact Euclidean distance transform.
+LCD light and all material effects are procedural. No generated photography is
+used in this version. `assets/social-preview.png` is a screenshot of the page.
 
 Barlow Condensed and DM Sans are self-hosted under the SIL Open Font License;
-their license files ship in `assets/`. Favicon and cartridge artwork are SVG/CSS.
+their license files ship in `assets/`. The favicon is SVG.

@@ -3,87 +3,58 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#171816">
-  <meta name="description" content="A camera for five-frame loops. Three opinionated film stocks. One moment worth repeating. Meet KURO and join the early-access list.">
-  <meta property="og:title" content="KURO — A little less perfect. A lot more alive.">
-  <meta property="og:description" content="Five frames. Three film stocks. No edit screen. A camera for the moments in between.">
-  <meta property="og:image" content="https://benmidi.github.io/kuro-site/assets/after-rain.jpg">
+  <meta name="theme-color" content="#111213">
+  <meta name="description" content="KURO. For the moments in between. A new camera, coming soon.">
+  <meta property="og:title" content="KURO — For the moments in between.">
+  <meta property="og:description" content="A new camera. Coming soon. Stay in the loop.">
+  <meta property="og:image" content="https://benmidi.github.io/kuro-site/assets/social-preview.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://benmidi.github.io/kuro-site/">
-  <title>KURO — A camera for the moments in between.</title>
+  <title>KURO — For the moments in between.</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="assets/barlow-700.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="preload" href="assets/after-rain.jpg" as="image">
   <link rel="stylesheet" href="style.css">
   <script src="app.js" type="module"></script>
+  <script src="waitlist.js" type="module"></script>
 </head>
 <body>
-  <a class="skip-link" href="#main">Skip to content</a>
-  <header class="site-header wrap">
-    <a class="brand" href="#" aria-label="KURO home"><span class="brand-dot"></span>KURO</a>
-    <span class="header-caption">A CAMERA FOR THE<br>MOMENTS IN BETWEEN.</span>
-    <nav aria-label="Main navigation"><a href="#stocks">The stocks</a><a class="nav-cta" href="#early-access">Get early access <span aria-hidden="true">↗</span></a></nav>
-  </header>
-  <main id="main">
-    <section class="hero wrap" aria-labelledby="hero-title">
-      <div class="hero-copy">
-        <div class="eyebrow"><span class="status-dot"></span> SMALL LOOPS. BIG FEELINGS.</div>
-        <h1 id="hero-title">A LITTLE LESS<br><span class="outline">PERFECT.</span><br>A LOT MORE<br><span class="alive">ALIVE<span class="period">.</span></span></h1>
-        <p class="hero-description">Life doesn’t happen in stills.<br>Catch it in five frames. Let it live on a loop.</p>
-        <a class="button button-primary" href="#early-access">Get early access <span aria-hidden="true">↗</span></a>
-        <p class="micro hero-note">IN DEVELOPMENT FOR iOS & ANDROID</p>
-      </div>
-      <div class="hero-demo">
-        <div class="demo-topline micro"><span>KURO / STOCK STUDY 001</span><span>音のない記憶</span></div>
-        <div class="camera" id="camera">
-          <div class="camera-head"><span class="camera-logo">KURO</span><span class="micro"><i class="red-led"></i> <span id="camera-mode">LIVE VIEW</span></span><span class="camera-number">01—05</span></div>
-          <div class="viewfinder" id="viewfinder">
-            <img class="photo-fallback" src="assets/after-rain.jpg" alt="A cyclist passing a lantern-lit shop on a rain-soaked street at dusk." width="1536" height="1024">
-            <canvas id="film" aria-label="Interactive film stock treatment of the street scene" role="img"></canvas>
-            <div class="viewfinder-top micro"><span id="stock-label">KARE ’09</span><span id="iso-label">ISO 400</span></div>
-            <span class="focus-corner tl"></span><span class="focus-corner tr"></span><span class="focus-corner bl"></span><span class="focus-corner br"></span>
-            <div class="focus-mark" aria-hidden="true">+</div>
-            <div class="viewfinder-bottom micro"><span>AF <span aria-hidden="true">▣</span></span><span id="frame-label">FRAME 01 / 05</span><span id="exposure-label">EV +0.0</span></div>
-            <div class="shutter-flash" id="shutter-flash"></div>
-          </div>
-          <div class="camera-controls">
-            <div class="exposure"><label for="exposure">EXPOSURE <span id="ev-value">+0.0</span></label><input id="exposure" type="range" min="-1" max="1" step="0.333333" value="0" aria-label="Demo exposure in stops"><div class="exposure-ticks" aria-hidden="true">− <span>· · · · ·</span> +</div></div>
-            <button class="shutter" id="shutter" aria-label="Capture a demo loop"><span></span></button>
-            <button class="motion-button" id="motion" aria-pressed="false"><span class="motion-icon" aria-hidden="true">Ⅱ</span><span id="motion-label">PAUSE</span></button>
-          </div>
-          <div class="stock-switcher" role="group" aria-label="Choose a demo film stock">
-            <button data-stock="0" aria-pressed="false"><span class="stock-dot sumi-dot"></span><span>SUMI <small>1600</small></span></button>
-            <button data-stock="1" aria-pressed="false"><span class="stock-dot mist-dot"></span><span>MIST <small>160</small></span></button>
-            <button data-stock="2" aria-pressed="true"><span class="stock-dot kare-dot"></span><span>KARE <small>’09</small></span></button>
-          </div>
-        </div>
-        <div class="demo-caption"><span class="micro">↑ PICK A STOCK. PRESS THE SHUTTER.</span><span class="demo-disclaimer">Illustrative browser demo</span></div>
-        <div class="demo-caption capture-caption" id="capture-status" role="status">A little grain. A little movement. A moment on repeat.</div>
-      </div>
+  <a class="skip-link" href="#email">Skip to signup</a>
+  <main class="installation" id="installation">
+    <canvas id="material" aria-hidden="true"></canvas>
+    <div class="matte-border" aria-hidden="true"></div>
+    <i class="fastener top-left" aria-hidden="true"></i><i class="fastener top-right" aria-hidden="true"></i>
+    <i class="fastener bottom-left" aria-hidden="true"></i><i class="fastener bottom-right" aria-hidden="true"></i>
+    <header class="masthead">
+      <span class="edition"><span lang="ja">黒</span><span>KURO — 001</span></span>
+      <span class="coming-soon"><i></i> A NEW CAMERA. COMING SOON.</span>
+      <button id="motion" class="motion-button" type="button" aria-label="Pause animation" aria-pressed="false" title="Pause animation"><svg width="12" height="14" viewBox="0 0 12 14" fill="none" aria-hidden="true"><path id="motion-icon" d="M3 2v10M9 2v10" stroke="currentColor" stroke-width="1.5"/></svg></button>
+    </header>
+
+    <div class="word-area">
+      <button id="word-window" class="word-window" type="button" aria-label="Illuminate KURO" title="Hold to bring it into focus"><h1>KURO</h1></button>
+      <div class="under-word" aria-hidden="true"><span>光と、記憶。</span><span>FOR THE MOMENTS IN BETWEEN.</span><span>01 — ∞</span></div>
+    </div>
+
+    <section class="signup" aria-labelledby="signup-title">
+      <h2 id="signup-title">Stay in the loop.</h2>
+      <form id="waitlist-form" method="post">
+        <label class="sr-only" for="email">Your email address</label>
+        <div class="email-row"><input id="email" name="email" type="email" placeholder="Your email address" autocomplete="email" maxlength="254" required><button type="submit" class="join-button" disabled aria-label="Join the early-access list"><span aria-hidden="true">↗</span></button></div>
+        <div class="form-bottom"><fieldset><legend class="sr-only">Your device</legend><label><input type="radio" name="platform" value="ios" checked><span>iOS</span></label><label><input type="radio" name="platform" value="android"><span>Android</span></label><label><input type="radio" name="platform" value="both"><span>Both</span></label></fieldset><span class="launch-note">JUST THE LAUNCH. NO NOISE.</span></div>
+        <div class="honey" aria-hidden="true"><label for="website">Website</label><input name="website" id="website" tabindex="-1" autocomplete="off"></div>
+        <p id="form-status" role="status" aria-live="polite"></p><noscript><p class="no-script">Enable JavaScript to join the list.</p></noscript>
+      </form>
     </section>
-
-    <div class="ticker" aria-label="Five frames. No edit screen. All feeling."><div><span>FIVE FRAMES</span><i>✳</i><span>NO EDIT SCREEN</span><i>✳</i><span>ALL FEELING</span><i>✳</i><span>FIVE FRAMES</span><i>✳</i><span>NO EDIT SCREEN</span><i>✳</i><span>ALL FEELING</span><i>✳</i></div></div>
-
-    <section class="moment-section wrap" aria-labelledby="moment-title">
-      <div class="section-heading"><span class="eyebrow section-index">01 / THE IDEA</span><h2 id="moment-title">NOT QUITE A PHOTO.<br>NOT QUITE A VIDEO.<br><span class="muted">VERY MUCH A MOMENT.</span></h2><p>The blur of a bike. The last light on the walk home. That thing your friend does.<br><br>KURO turns a tiny slice of life into a five-frame loop. Enough movement to take you back. Enough space to leave something to the imagination.</p></div>
-      <div class="film-strip" aria-label="Five illustrative frames from one moment"><figure style="--frame:0"><img src="assets/after-rain.jpg" alt="Lantern-lit street, illustrative frame one" loading="lazy"><figcaption>01 <span>THE FIRST GLIMPSE</span></figcaption></figure><figure style="--frame:1"><img src="assets/after-rain.jpg" alt="The same scene, illustrative frame two" loading="lazy"><figcaption>02 <span>THE IN-BETWEEN</span></figcaption></figure><figure style="--frame:2"><img src="assets/after-rain.jpg" alt="The same scene, illustrative frame three" loading="lazy"><figcaption>03 <span>RIGHT HERE</span></figcaption></figure><figure style="--frame:3"><img src="assets/after-rain.jpg" alt="The same scene, illustrative frame four" loading="lazy"><figcaption>04 <span>ALMOST GONE</span></figcaption></figure><figure style="--frame:4"><img src="assets/after-rain.jpg" alt="The same scene, illustrative frame five" loading="lazy"><figcaption>05 <span>AND AGAIN ↶</span></figcaption></figure></div>
-      <div class="strip-note micro"><span>ONE MOMENT / FIVE FRAMES / ON REPEAT</span><span>ILLUSTRATIVE FRAME STUDY</span></div>
-    </section>
-
-    <section class="stocks-section" id="stocks" aria-labelledby="stocks-title"><div class="wrap">
-      <div class="stocks-heading"><div><span class="eyebrow section-index">02 / CHOOSE YOUR CHARACTER</span><h2 id="stocks-title">THREE STOCKS.<br>ZERO NEUTRAL.</h2></div><p>A stock is a point of view.<br>Choose yours before you shoot.<br>The grain, the color, the rhythm. All in.</p></div>
-      <div class="stock-cards">
-        <button class="stock-card sumi-card" data-stock="0" aria-pressed="false" aria-label="Try SUMI 1600 in the demo"><div class="cartridge"><span class="cartridge-top micro">KURO / MONOCHROME FILM</span><span class="stock-kanji" lang="ja">墨</span><span class="cartridge-name">SUMI<span>1600</span></span><div class="cartridge-bottom micro"><span>PUSHED TWO STOPS</span><span>8 FPS ↻</span></div><div class="barcode" aria-hidden="true"></div></div><div class="stock-description"><span class="micro">01 / THE AFTER-HOURS ONE</span><h3>Stay out a little later.</h3><p>Hard grain. Deep blacks. No color to hide behind.</p><span class="stock-try">Try SUMI <span aria-hidden="true">↗</span></span></div></button>
-        <button class="stock-card mist-card" data-stock="1" aria-pressed="false" aria-label="Try MIST 160 in the demo"><div class="cartridge"><span class="cartridge-top micro">KURO / COLOR NEGATIVE FILM</span><span class="stock-kanji" lang="ja">霞</span><span class="cartridge-name">MIST<span>160</span></span><div class="cartridge-bottom micro"><span>SOFT LIGHT. SLOW DAYS.</span><span>6 FPS ↔</span></div><div class="barcode" aria-hidden="true"></div></div><div class="stock-description"><span class="micro">02 / THE DAYDREAM ONE</span><h3>Let the light linger.</h3><p>Washed color. Soft highlights. A little warm bloom.</p><span class="stock-try">Try MIST <span aria-hidden="true">↗</span></span></div></button>
-        <button class="stock-card kare-card" data-stock="2" aria-pressed="true" aria-label="Try KARE ’09 in the demo"><div class="cartridge"><span class="cartridge-top micro">KURO / EXPIRED COLOR FILM</span><span class="stock-kanji" lang="ja">枯</span><span class="cartridge-name">KARE<span>’09</span></span><div class="cartridge-bottom micro"><span>BEST BEFORE FEB 2009</span><span>5 FPS ↻</span></div><div class="barcode" aria-hidden="true"></div></div><div class="stock-description"><span class="micro">03 / THE WILD ONE</span><h3>Trust the accident.</h3><p>Shifted color. Restless shadows. Uninvited light leaks.</p><span class="stock-try">Try KARE <span aria-hidden="true">↗</span></span></div></button>
-      </div>
-    </div></section>
-
-    <section class="ritual-section wrap" aria-labelledby="ritual-title"><div><span class="eyebrow section-index">03 / THE RITUAL</span><h2 id="ritual-title">MAKE A CHOICE.<br>MAKE A MEMORY.<br><span class="muted">THEN LET IT BE.</span></h2></div><div class="ritual-steps"><div><span class="step-number">01</span><div><h3>Load your mood.</h3><p>Pick a stock. Set your exposure. Find something worth noticing.</p></div><span aria-hidden="true">↗</span></div><div><span class="step-number">02</span><div><h3>Feel the shutter.</h3><p>A short burst. A five-frame loop. The choices are already made.</p></div><span aria-hidden="true">◎</span></div><div><span class="step-number">03</span><div><h3>Keep it. Or burn it.</h3><p>No retouching rabbit hole. Keep the feeling, or leave it behind. Export the loops you love as video.</p></div><span aria-hidden="true">↶</span></div></div></section>
-
-    <section class="signup-section" id="early-access" aria-labelledby="signup-title"><div class="wrap signup-inner"><div><span class="eyebrow"><span class="status-dot"></span> COMING INTO FOCUS</span><h2 id="signup-title">BE HERE<br>FOR FRAME <span class="outline">ONE.</span></h2><p>We’re making a camera with a little more character.<br>Leave your email. We’ll let you know when it’s ready.</p></div><div class="signup-panel"><span class="micro">THE KURO EARLY-ACCESS LIST</span><form id="waitlist-form"><label for="email">Your email address</label><div class="email-row"><input id="email" name="email" type="email" placeholder="you@somewhere.nice" autocomplete="email" maxlength="254" required><button type="submit" aria-label="Join the early-access list">↗</button></div><fieldset><legend>I’m on</legend><label class="platform-option"><input type="radio" name="platform" value="ios" checked><span>iOS</span></label><label class="platform-option"><input type="radio" name="platform" value="android"><span>Android</span></label><label class="platform-option"><input type="radio" name="platform" value="both"><span>Both</span></label></fieldset><div class="honey" aria-hidden="true"><label for="website">Website</label><input name="website" id="website" tabindex="-1" autocomplete="off"></div><p class="signup-privacy">By joining, you agree to receive KURO early-access and launch updates. No tracking pixels. <button type="button" class="text-button" id="privacy-open">Privacy & removal</button></p><p id="form-status" role="status" aria-live="polite"></p></form><div class="signup-footer micro"><span>GOOD THINGS TAKE A MOMENT.</span><span>↶</span></div></div></div></section>
+    <footer class="footer"><span>IN DEVELOPMENT / iOS + ANDROID</span><button id="privacy-open" type="button">Privacy & removal</button><span class="serial">KU—000001</span></footer>
   </main>
-  <footer class="wrap site-footer"><a class="brand" href="#" aria-label="Back to top"><span class="brand-dot"></span>KURO</a><span class="micro">LESS SCROLLING. MORE SEEING.</span><span class="micro">© <span id="year">2026</span> KURO</span><a class="back-top micro" href="#">BACK TO TOP ↑</a></footer>
-  <dialog id="privacy-dialog" aria-labelledby="privacy-title"><button class="dialog-close" id="privacy-close" aria-label="Close privacy notice">×</button><span class="eyebrow">A SMALL LIST. A SIMPLE PROMISE.</span><h2 id="privacy-title">Your email stays yours.</h2><p>KURO stores your email, device preference, and signup time in its Supabase database for early-access and launch updates. We don’t sell the list or use tracking pixels.</p><p>A salted hash of your network address is used to limit automated signups. Your raw network address is not stored in the waitlist. Hosting providers may keep their own operational logs.</p><p>Want to leave? Enter the same email below to remove it immediately. We’ll retain waitlist details only while this early-access list is in use.</p><form id="removal-form"><label for="removal-email">Email to remove</label><input type="email" id="removal-email" required maxlength="254" autocomplete="email"><button class="button button-primary" type="submit">Remove my email <span aria-hidden="true">↗</span></button><p id="removal-status" role="status"></p></form><p class="micro">DEMO PHOTOGRAPHY IS AI-GENERATED. THE BROWSER STOCK STUDY IS ILLUSTRATIVE, NOT AN APP CAPTURE.</p></dialog>
+  <dialog id="privacy-dialog" aria-labelledby="privacy-title">
+    <button class="dialog-close" id="privacy-close" aria-label="Close privacy notice">×</button>
+    <span class="dialog-eyebrow">KURO / EARLY ACCESS</span>
+    <h2 id="privacy-title">Your email stays yours.</h2>
+    <p>Joining the list opts you into KURO early-access and launch updates. We store your email, device preference, and signup time in Kuro’s Supabase database while the early-access list is in use. We don’t sell the list or use tracking pixels.</p>
+    <p>A salted hash of your network address limits automated signups. Your raw network address is not stored in the waitlist. Hosting providers may keep their own operational logs.</p>
+    <p>To leave, enter the same email below.</p>
+    <form id="removal-form"><label for="removal-email">Email to remove</label><input type="email" id="removal-email" required maxlength="254" autocomplete="email"><button class="remove-button" type="submit">Remove my email <span aria-hidden="true">↗</span></button><p id="removal-status" role="status"></p></form>
+  </dialog>
 </body>
 </html>

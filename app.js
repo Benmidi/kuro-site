@@ -2,6 +2,7 @@ const canvas = document.querySelector('#material');
 const word = document.querySelector('#word-window');
 const scene = document.querySelector('#installation');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const automaticTilt = matchMedia('(max-width: 760px), (hover: none) and (pointer: coarse)');
 let paused = reducedMotion.matches;
 let renderer = null;
 let isHeld = false;
@@ -211,6 +212,12 @@ async function initMaterial() {
     if (now-lastDraw < 1000/30) { raf=requestAnimationFrame(tick); return; }
     const dt=Math.min((now-lastTime)/1000,.1); lastTime=now;lastDraw=now;
     if (!paused) animationTime += dt;
+    // Follow a slow, drifting path through the same -1…1 range as the mouse.
+    // Use the scene clock so background tabs and reduced motion stay still.
+    if (automaticTilt.matches) {
+      const phase = animationTime * .28;
+      target = paused ? [0,0] : [Math.sin(phase), Math.sin(phase * .73 + Math.PI / 3)];
+    }
     const blend=reducedMotion.matches?1:1-Math.exp(-dt*6);
     pointer[0]+=(target[0]-pointer[0])*blend;pointer[1]+=(target[1]-pointer[1])*blend;
     press+=((isHeld?1:0)-press)*(reducedMotion.matches?1:1-Math.exp(-dt*12));
@@ -227,13 +234,16 @@ async function initMaterial() {
     logo=[bounds.left-rect.left,bounds.top-rect.top,bounds.width,bounds.height];draw();wake();
   };
   const observer=new ResizeObserver(resize);observer.observe(scene);observer.observe(word);
-  const pointerMove=event=>{const r=scene.getBoundingClientRect();target=[(event.clientX-r.left)/r.width*2-1,(event.clientY-r.top)/r.height*2-1];wake();};
+  const pointerMove=event=>{if(automaticTilt.matches)return;const r=scene.getBoundingClientRect();target=[(event.clientX-r.left)/r.width*2-1,(event.clientY-r.top)/r.height*2-1];wake();};
   const pointerLeave=()=>{target=[0,0];wake();};
+  const tiltModeChange=()=>{target=[0,0];wake();};
+  automaticTilt.addEventListener('change',tiltModeChange);
   scene.addEventListener('pointermove',pointerMove,{passive:true});scene.addEventListener('pointerleave',pointerLeave);
   const visibility=()=>{if(document.hidden){cancelAnimationFrame(raf);raf=0;}else wake();};
   document.addEventListener('visibilitychange',visibility);
   canvas.addEventListener('webglcontextlost',event=>{
     event.preventDefault();lost=true;cancelAnimationFrame(raf);observer.disconnect();
+    automaticTilt.removeEventListener('change',tiltModeChange);
     scene.removeEventListener('pointermove',pointerMove);scene.removeEventListener('pointerleave',pointerLeave);document.removeEventListener('visibilitychange',visibility);
     scene.classList.remove('gpu-ready');canvas.classList.remove('ready');renderer=null;
   },{once:true});

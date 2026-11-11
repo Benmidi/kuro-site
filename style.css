@@ -14,3 +14,7 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important}}
 
 .no-script{font-size:10px;color:#b2c5b5;margin-top:13px}
+
+/* Keep the wordmark centered at its existing focal point, with a 500px cap. */
+.word-area{left:50%;right:auto;top:44%;width:min(500px,88%);height:auto;aspect-ratio:12/5;max-height:none;transform:translate(-50%,-50%)}
+.word-window h1{font-size:min(39vw,220px)}

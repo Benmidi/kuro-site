@@ -17,8 +17,11 @@ softbox reflections and independently drifting light behind each letter. It
 uses the app tab bar's material vocabulary; it is a browser approximation of
 those materials rather than a direct port of the Metal pipeline.
 
-Move the pointer to shift the lighting and parallax. Hold the wordmark (or
-hold Space/Enter while focused) to bring the LCDs closer to the acrylic. The
+The centered wordmark is capped at 500px wide and scales down with the viewport.
+Move the pointer to shift the lighting and parallax. Mobile layouts and touch-only
+devices automatically drift through the full mouse tilt range on both axes.
+Hold the wordmark, or hold Space/Enter while focused, to bring the LCDs closer
+to the acrylic. The
 scene follows reduced-motion preferences, pausing its ambient motion when
 requested. Rendering stops while the page is hidden, caps at 30
 fps and 1800 pixels on the longest edge, and uses at most 1.5x device resolution.

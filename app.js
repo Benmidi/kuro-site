@@ -1,21 +1,13 @@
 const canvas = document.querySelector('#material');
 const word = document.querySelector('#word-window');
 const scene = document.querySelector('#installation');
-const motionButton = document.querySelector('#motion');
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let paused = reducedMotion.matches;
 let renderer = null;
 let isHeld = false;
 let pulse = 0;
 
-function syncMotion() {
-  motionButton.setAttribute('aria-pressed', String(paused));
-  motionButton.setAttribute('aria-label', paused ? 'Play animation' : 'Pause animation');
-  motionButton.title = paused ? 'Play animation' : 'Pause animation';
-  document.querySelector('#motion-icon').setAttribute('d', paused ? 'M3 2l7 5-7 5V2Z' : 'M3 2v10M9 2v10');
-}
-motionButton.addEventListener('click', () => { paused = !paused; syncMotion(); renderer?.wake(); });
-reducedMotion.addEventListener('change', () => { if (reducedMotion.matches) { paused = true; syncMotion(); renderer?.wake(); } });
+reducedMotion.addEventListener('change', () => { paused = reducedMotion.matches; renderer?.wake(); });
 word.addEventListener('pointerdown', event => { if (event.button !== 0) return; isHeld = true; word.setPointerCapture(event.pointerId); renderer?.wake(); });
 for (const event of ['pointerup', 'pointercancel', 'lostpointercapture']) {
   word.addEventListener(event, () => { isHeld = false; renderer?.wake(); });
@@ -24,7 +16,6 @@ word.addEventListener('keydown', event => { if (event.key === ' ' || event.key =
 word.addEventListener('keyup', event => { if (event.key === ' ' || event.key === 'Enter') { isHeld = false; pulse = 1; renderer?.wake(); } });
 word.addEventListener('blur', () => { isHeld = false; renderer?.wake(); });
 word.addEventListener('click', () => { pulse = 1; renderer?.wake(); });
-syncMotion();
 
 // Signed-distance lettering lets the fragment shader shade the cut edge, the
 // recessed pocket, the acrylic bevel, and the LCD as separate material layers.

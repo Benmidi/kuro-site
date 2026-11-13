@@ -1,6 +1,6 @@
 // KURO stock tester: develops the webcam through any stock given as JSON.
 // The shader follows Kuro/Film/Film.metal (develop + filmFragment) in one pass.
-import { LoopClock, exposure, filled, findStocks, motionLabel, problems, randomSeed } from './film.js';
+import { LoopClock, exposure, filled, findStocks, motionLabel, problems, randomSeed } from './film.js?v=2';
 
 const $ = id => document.getElementById(id);
 const FRAME_W = 540, FRAME_H = 720;   // the apps' film frame, which sets the size of the grain
@@ -258,6 +258,13 @@ const state = {
 };
 const liveTexture = { texture: null, size: { w: 3, h: 4 } };
 const key = s => `${s.id}@${s.version ?? 1}`;
+
+/** A stock ready to list and draw. Throws if this page can't draw it, so it is never kept. */
+function entry(spec) {
+  const made = { spec, use: filled(spec), problems: problems(spec) };
+  airCSS(spec);
+  return made;
+}
 const current = () => state.stocks[state.selected];
 
 function save() {
@@ -270,10 +277,11 @@ function addFrom(text, origin) {
   try { value = JSON.parse(text); } catch (error) { throw new Error(`${origin} isn't JSON: ${error.message}`); }
   const found = findStocks(value);
   if (!found.length) throw new Error(`${origin} has no stock in it. A stock is an object with an "id" and "curves".`);
-  for (const spec of found) {
-    const entry = { spec, use: filled(spec), problems: problems(spec) };
-    const at = state.stocks.findIndex(s => key(s.spec) === key(spec));
-    if (at >= 0) state.stocks[at] = entry; else state.stocks.push(entry);
+  let made;
+  try { made = found.map(entry); } catch (error) { throw new Error(`${origin} has a stock this page can't draw: ${error.message}`); }
+  for (const e of made) {
+    const at = state.stocks.findIndex(s => key(s.spec) === key(e.spec));
+    if (at >= 0) state.stocks[at] = e; else state.stocks.push(e);
     state.selected = at >= 0 ? at : state.stocks.length - 1;
   }
   endLoop();
@@ -304,7 +312,7 @@ const safeHex = (v, fallback) => (/^#[0-9a-fA-F]{6}$/.test(v) ? v : fallback);
 
 /** A card's four lobes as CSS, the way the Air style draws them. */
 function airCSS(spec) {
-  const layers = Array.isArray(spec.air?.layers) ? spec.air.layers : [];
+  const layers = (Array.isArray(spec.air?.layers) ? spec.air.layers : []).filter(l => l !== null && typeof l === 'object');
   const lobes = layers.map(l => `radial-gradient(at ${(+l.x || 0) * 100}% ${(+l.y || 0) * 100}%, ${safeHex(l.hex, '#333333')} 0%, transparent 70%)`);
   const mean = [16, 8, 0].map(sh => Math.round(layers.reduce((a, l) => a + ((parseInt(safeHex(l.hex, '#333333').slice(1), 16) >> sh) & 255), 0) / Math.max(layers.length, 1)));
   return `background:${[...lobes, `rgb(${mean})`].join(',')};color:${safeHex(spec.air?.ink, '#f3f1ec')}`;
@@ -323,6 +331,7 @@ function renderList() {
   $('all').setAttribute('aria-pressed', state.all);
   renderDetail();
   layoutLabels();
+  setPhase();   // the shutter follows whether there is a stock to shoot
 }
 
 function renderDetail() {
@@ -478,9 +487,15 @@ function start() {
   try { setUpGL(); } catch (error) { document.body.classList.add('no-gl'); console.error(error); return; }
   liveTexture.texture = makeTexture();
 
-  try { for (const spec of JSON.parse(localStorage.getItem('kuro.stock-tester') || '[]')) state.stocks.push({ spec, use: filled(spec), problems: problems(spec) }); } catch { /* nothing kept */ }
-  renderList();
-  setPhase();
+  // Stocks kept from last time. Anything that isn't a stock, or can't be drawn, is dropped: it must
+  // never stop the page from starting.
+  let kept = [];
+  try { kept = JSON.parse(localStorage.getItem('kuro.stock-tester') || '[]'); } catch { /* nothing kept */ }
+  for (const spec of findStocks(Array.isArray(kept) ? kept : [])) {
+    try { state.stocks.push(entry(spec)); } catch { /* dropped */ }
+  }
+  try { renderList(); } catch { state.stocks = []; state.selected = 0; renderList(); }
+  save();
 
   $('camera').onclick = () => (source.live ? source.stop() : source.start());
   $('shoot').onclick = () => (state.loop?.clock ? endLoop() : shoot());

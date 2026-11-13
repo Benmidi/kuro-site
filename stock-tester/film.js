@@ -108,54 +108,96 @@ export function findStocks(value, depth = 0) {
 }
 
 const FORMAT = 1, MAX_FRAMES = 12, MAX_QUIET = 1000;
-const REQUIRED = ['format', 'id', 'version', 'name', 'short', 'iso', 'kanji', 'line', 'grainNote', 'air', 'pair', 'accent',
-  'curves', 'grain', 'mono', 'monoW', 'matrix', 'sat', 'splitSh', 'splitHi', 'fog', 'grainSize', 'grainShape', 'colorGrain',
-  'vignette', 'halation', 'flicker', 'leak'];
 const numbers = (v, n) => Array.isArray(v) && v.length === n && v.every(Number.isFinite);
 const hex = v => typeof v === 'string' && /^#[0-9a-fA-F]{6}$/.test(v);
+
+// What the apps' decoders ask of each field (Stock, AirPalette, Cadence and Season in Stocks.swift).
+// A field of the wrong type fails the decode outright, so the whole file is refused.
+const KINDS = {
+  whole: [Number.isInteger, 'a whole number'],
+  number: [Number.isFinite, 'a number'],
+  text: [v => typeof v === 'string', 'text'],
+  flag: [v => typeof v === 'boolean', 'true or false'],
+  color: [hex, 'a color like #C7802D'],
+  three: [v => numbers(v, 3), 'three numbers'],
+  numbers: [v => Array.isArray(v) && v.every(Number.isFinite), 'a list of numbers'],
+  wholes: [v => Array.isArray(v) && v.every(Number.isInteger), 'a list of whole numbers'],
+  list: [Array.isArray, 'a list'],
+  object: [isObject, 'an object'],
+  shape: [v => ['mid', 'flat', 'shadow'].includes(v), 'mid, flat or shadow'],
+  mode: [v => ['loop', 'bounce'].includes(v), 'loop or bounce'],
+};
+const STOCK = {
+  format: 'whole', id: 'text', version: 'whole', name: 'text', short: 'text', iso: 'whole', kanji: 'text', line: 'text',
+  grainNote: 'text', air: 'object', pair: 'object', accent: 'color', curves: 'list', grain: 'number', mono: 'flag',
+  monoW: 'three', matrix: 'numbers', sat: 'number', splitSh: 'three', splitHi: 'three', fog: 'three', grainSize: 'number',
+  grainShape: 'shape', colorGrain: 'flag', vignette: 'number', halation: 'number', flicker: 'number', leak: 'number',
+};
+const AIR = { name: 'text', kanji: 'text', blur: 'number', ink: 'color', layers: 'list' };
+const LAYER = { hex: 'color', x: 'number', y: 'number' };
+const PAIR = { a: 'color', b: 'color' };
+const CURVE = { lift: 'number', white: 'number', gamma: 'number', k: 'number' };
+const CADENCE = {
+  fps: 'number', mode: 'mode', stutter: 'flag', dt: 'number', quietPasses: 'wholes', swapChance: 'number',
+  frames: 'whole', shown: 'wholes', swaps: 'list',
+};
+const SWAP = { slot: 'whole', frame: 'whole' };
+const SEASON = { name: 'text', place: 'text', code: 'text', coords: 'text', open: 'object', close: 'object' };
+const MONTH_DAY = { month: 'whole', day: 'whole' };
+
+/** Checks `value` has every field of `shape` with the right type. Returns whether it does. */
+function check(value, shape, where, out) {
+  if (!isObject(value)) { out.push(`${where} must be an object`); return false; }
+  const before = out.length;
+  for (const [key, kind] of Object.entries(shape)) {
+    const [fits, wants] = KINDS[kind], name = where ? `${where} "${key}"` : `"${key}"`;
+    if (!(key in value)) out.push(where ? `${where} is missing "${key}"` : `Missing "${key}"`);
+    else if (!fits(value[key])) out.push(`${name} must be ${wants}`);
+  }
+  return out.length === before;
+}
 
 /** Why the apps would refuse this spec. Empty when they would play it. */
 export function problems(s) {
   const out = [];
-  for (const key of REQUIRED) if (!(key in s)) out.push(`Missing "${key}"`);
-  if (Number.isFinite(s.format) && s.format > FORMAT) out.push(`Format ${s.format} is newer than the apps read (${FORMAT})`);
-  if ('curves' in s) {
-    if (!Array.isArray(s.curves) || !s.curves.length) out.push('"curves" needs at least one curve');
-    else if (!s.curves.every(c => isObject(c) && ['lift', 'white', 'gamma', 'k'].every(k => Number.isFinite(c[k])))) out.push('Each curve needs lift, white, gamma and k');
+  check(s, STOCK, '', out);
+  if (Number.isInteger(s.format) && s.format > FORMAT) out.push(`Format ${s.format} is newer than the apps read (${FORMAT})`);
+  if (Array.isArray(s.curves)) {
+    if (!s.curves.length) out.push('"curves" needs at least one curve');
+    s.curves.forEach((c, i) => check(c, CURVE, `Curve ${i + 1}`, out));
   }
-  if ('matrix' in s && !numbers(s.matrix, 9)) out.push('"matrix" needs nine numbers');
-  for (const key of ['monoW', 'splitSh', 'splitHi', 'fog']) if (key in s && !numbers(s[key], 3)) out.push(`"${key}" needs three numbers`);
-  for (const key of ['grain', 'sat', 'grainSize', 'vignette', 'halation', 'flicker', 'leak', 'iso', 'version']) {
-    if (key in s && !Number.isFinite(s[key])) out.push(`"${key}" must be a number`);
-  }
-  if ('grainShape' in s && !['mid', 'flat', 'shadow'].includes(s.grainShape)) out.push('"grainShape" must be mid, flat or shadow');
-  if ('accent' in s && !hex(s.accent)) out.push('"accent" must be a color like #C7802D');
-  if ('air' in s) {
+  if (KINDS.numbers[0](s.matrix) && s.matrix.length !== 9) out.push('"matrix" needs nine numbers');
+  if (isObject(s.air)) {
     const a = s.air;
-    if (!isObject(a) || !Array.isArray(a.layers) || a.layers.length !== 4) out.push('"air" needs four layers');
-    else if (!a.layers.every(l => isObject(l) && hex(l.hex) && Number.isFinite(l.x) && Number.isFinite(l.y)) || !hex(a.ink)) out.push('"air" colors must be like #C7802D, with x and y');
+    check(a, AIR, 'Card', out);
+    if (Array.isArray(a.layers)) {
+      if (a.layers.length !== 4) out.push('Card needs four layers');
+      a.layers.forEach((l, i) => check(l, LAYER, `Card layer ${i + 1}`, out));
+    }
+    if (a.style != null && typeof a.style !== 'string') out.push('Card "style" must be text');
   }
-  if ('pair' in s && !(isObject(s.pair) && hex(s.pair.a) && hex(s.pair.b))) out.push('"pair" needs colors a and b');
-  if (s.cadence != null) {
-    if (!isObject(s.cadence)) out.push('"cadence" must be an object');
-    else out.push(...cadenceProblems(s.cadence));
+  if (isObject(s.pair)) check(s.pair, PAIR, 'Pair', out);
+  if (s.cadence != null) out.push(...cadenceProblems(s.cadence));
+  if (s.season != null && check(s.season, SEASON, 'Season', out)) {
+    check(s.season.open, MONTH_DAY, 'Season open', out);
+    check(s.season.close, MONTH_DAY, 'Season close', out);
   }
   return out;
 }
 
-function cadenceProblems(raw) {
-  const out = [], c = { ...STANDARD_CADENCE, ...raw };
-  for (const key of ['fps', 'dt', 'quietPasses', 'swapChance', 'frames', 'shown', 'swaps']) if (!(key in raw)) out.push(`Cadence is missing "${key}"`);
+function cadenceProblems(c) {
+  const out = [];
+  if (!check(c, CADENCE, 'Cadence', out)) return out;
   if (!(c.fps >= 1 && c.fps <= 60)) out.push('Playback must be 1 to 60 fps');
   if (!(c.dt >= 1 / 60 && c.dt <= 1)) out.push('Exposures must be 1/60 s to 1 s apart');
-  if (!['loop', 'bounce'].includes(c.mode)) out.push('Cadence mode must be loop or bounce');
   const q = c.quietPasses;
-  if (!(numbers(q, 2) && Number.isInteger(q[0]) && Number.isInteger(q[1]) && q[0] >= 0 && q[1] >= q[0] && q[1] <= MAX_QUIET)) out.push(`Quiet passes must be a range within 0 to ${MAX_QUIET}`);
+  // The apps read the first two numbers as the range and ignore any after them.
+  if (!(q.length >= 2 && q[0] >= 0 && q[1] >= q[0] && q[1] <= MAX_QUIET)) out.push(`Quiet passes must be a range within 0 to ${MAX_QUIET}`);
   if (!(c.swapChance >= 0 && c.swapChance <= 1)) out.push('Swap chance must be 0 to 1');
-  const frames = c.frames, inFrames = i => Number.isInteger(i) && i >= 0 && i < frames;
-  if (!(Number.isInteger(frames) && frames >= 2 && frames <= MAX_FRAMES)) out.push(`A stock takes 2 to ${MAX_FRAMES} exposures`);
-  if (!(Array.isArray(c.shown) && c.shown.length >= 2 && c.shown.every(inFrames))) out.push('"shown" needs two or more exposures the stock takes');
-  else if (!(Array.isArray(c.swaps) && c.swaps.every(s => isObject(s) && Number.isInteger(s.slot) && s.slot >= 0 && s.slot < c.shown.length && inFrames(s.frame)))) out.push('Each swap needs a slot in "shown" and an exposure the stock takes');
+  const frames = c.frames, inFrames = i => i >= 0 && i < frames;
+  if (!(frames >= 2 && frames <= MAX_FRAMES)) out.push(`A stock takes 2 to ${MAX_FRAMES} exposures`);
+  if (!(c.shown.length >= 2 && c.shown.every(inFrames))) out.push('"shown" needs two or more exposures the stock takes');
+  else if (!c.swaps.every((s, i) => check(s, SWAP, `Swap ${i + 1}`, out) && s.slot >= 0 && s.slot < c.shown.length && inFrames(s.frame))) out.push('Each swap needs a slot in "shown" and an exposure the stock takes');
   return out;
 }
 
@@ -163,7 +205,7 @@ function cadenceProblems(raw) {
 export function filled(s) {
   const three = (v, d) => (numbers(v, 3) ? v : d), num = (v, d) => (Number.isFinite(v) ? v : d);
   const curves = Array.isArray(s.curves) && s.curves.length ? s.curves : [{}];
-  const cad = playback(s), cadOK = !cadenceProblems(cad).length;
+  const cadOK = s.cadence != null && !cadenceProblems(s.cadence).length;
   return {
     ...s,
     curves: curves.map(c => ({ lift: num(c?.lift, 0), white: num(c?.white, 1), gamma: num(c?.gamma, 1), k: num(c?.k, 1) })),
@@ -173,7 +215,7 @@ export function filled(s) {
     grainSize: num(s.grainSize, 1), grainShape: ['mid', 'flat', 'shadow'].includes(s.grainShape) ? s.grainShape : 'flat',
     colorGrain: s.colorGrain === true, vignette: num(s.vignette, 0), halation: num(s.halation, 0),
     flicker: num(s.flicker, 0), leak: num(s.leak, 0),
-    cadence: cadOK ? cad : STANDARD_CADENCE, hasCadence: s.cadence != null,
+    cadence: cadOK ? s.cadence : STANDARD_CADENCE, hasCadence: cadOK,
   };
 }
 

@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#0c0c0d">
+  <title>KURO — Stock tester</title>
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <style>
+    @font-face{font-family:Barlow;src:url('../assets/barlow-700.ttf') format('truetype');font-weight:700;font-display:swap}
+    @font-face{font-family:DM;src:url('../assets/dm-regular.ttf') format('truetype');font-weight:400;font-display:swap}
+    :root{color-scheme:dark;--housing:#0c0c0d;--paper:#f3f1ec;--quiet:#f3f1ec8f;--line:#f3f1ec1f;--well:#151517;--kincha:#c7802d;--mono:'SFMono-Regular',ui-monospace,Menlo,Consolas,monospace}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--housing);color:var(--paper);font-family:DM,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+    button,input,textarea{font:inherit;color:inherit}
+    button{cursor:pointer}
+    button:disabled{opacity:.35;cursor:default}
+    :focus-visible{outline:1px solid var(--paper);outline-offset:3px}
+    .page{max-width:1180px;margin:0 auto;padding:22px 16px 60px;display:grid;grid-template-columns:minmax(0,1fr);gap:22px}
+    @media(min-width:900px){.page{grid-template-columns:minmax(0,440px) minmax(0,1fr);align-items:start;padding:28px 24px 80px}.camera{position:sticky;top:20px}}
+    .eyebrow{font:700 10px/1 var(--mono);letter-spacing:.34em;color:var(--quiet)}
+    h1{font:700 clamp(40px,9vw,64px)/.9 Barlow,Impact,'Arial Narrow',sans-serif;margin:8px 0 6px;letter-spacing:-.005em;text-transform:uppercase;overflow-wrap:anywhere}
+    .sub{font:600 11px/1.4 var(--mono);letter-spacing:.16em;color:var(--quiet);min-height:16px}
+    .finder{position:relative;margin-top:14px;aspect-ratio:3/4;background:#000;border-radius:6px;overflow:hidden;box-shadow:0 3px 0 #000}
+    .sheet .finder{aspect-ratio:1/1}
+    #film{position:absolute;inset:0;width:100%;height:100%;display:block}
+    #video{display:none}
+    .brackets{position:absolute;inset:14px;pointer-events:none}
+    .brackets i{position:absolute;width:22px;height:22px;border:2px solid #f3f1ecb3}
+    .brackets i:nth-child(1){left:0;top:0;border-right:0;border-bottom:0}.brackets i:nth-child(2){right:0;top:0;border-left:0;border-bottom:0}
+    .brackets i:nth-child(3){left:0;bottom:0;border-right:0;border-top:0}.brackets i:nth-child(4){right:0;bottom:0;border-left:0;border-top:0}
+    .sheet .brackets,.empty .brackets{display:none}
+    #labels{position:absolute;inset:0}
+    .label{position:absolute;padding:0;border:0;background:none;text-align:left}
+    .label span{position:absolute;left:6px;bottom:6px;font:700 9px/1 var(--mono);letter-spacing:.12em;background:#0c0c0dd9;padding:4px 5px;border-radius:3px}
+    .label:hover{box-shadow:inset 0 0 0 2px var(--paper)}
+    .blank{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:30px;font:600 11px/1.9 var(--mono);letter-spacing:.14em;color:var(--quiet)}
+    .empty .blank,.no-gl .blank.gl{display:grid}.no-gl .blank:not(.gl){display:none}
+    .hud{display:flex;justify-content:space-between;gap:12px;align-items:center;min-height:34px;font:700 10px/1.3 var(--mono);letter-spacing:.1em}
+    .hud #anatomy{color:var(--quiet)}
+    .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .key{min-height:40px;padding:0 13px;border:0;border-radius:5px;background:linear-gradient(#2a2a2d,#1a1a1c);box-shadow:0 3px 0 #000,inset 0 1px #ffffff14;font:700 10px/1 var(--mono);letter-spacing:.14em}
+    .key:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 #000}
+    .key.primary,.key[aria-pressed=true]{background:var(--paper);color:var(--housing)}
+    .ev{display:flex;align-items:center;gap:9px;flex:1 1 180px;font:700 10px/1 var(--mono);letter-spacing:.1em}
+    .ev input{flex:1;min-width:0;accent-color:var(--kincha)}
+    .ev output{min-width:34px;text-align:right}
+    .note{font:400 11px/1.6 var(--mono);color:var(--quiet);margin:10px 0 0}
+    h2{font:700 30px/1 Barlow,Impact,'Arial Narrow',sans-serif;text-transform:uppercase;margin:0 0 6px}
+    .lede{font-size:13px;line-height:1.55;color:var(--quiet);margin:0 0 12px;max-width:60ch}
+    .drop{border:1px dashed #f3f1ec55;border-radius:6px;padding:14px;background:var(--well)}
+    .dropping .drop{border-color:var(--paper);background:#1e1e21}
+    .dropping::after{content:'DROP TO ADD';position:fixed;inset:10px;display:grid;place-items:center;border:2px dashed var(--paper);border-radius:10px;background:#0c0c0de0;font:700 44px Barlow,Impact,sans-serif;letter-spacing:.02em;pointer-events:none;z-index:9}
+    textarea{display:block;width:100%;min-height:88px;resize:vertical;background:#0c0c0d;border:1px solid var(--line);border-radius:4px;padding:10px;font:400 11px/1.5 var(--mono);color:var(--paper)}
+    textarea::placeholder{color:#f3f1ec66}
+    .drop .controls{margin-top:10px}
+    .filekey{position:relative;display:inline-grid;place-items:center}
+    .filekey input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+    #report{font:600 11px/1.5 var(--mono);letter-spacing:.04em;min-height:18px;margin:10px 0 0;color:#b9d6b4}
+    #report[data-bad=true]{color:#f0a184}
+    #stocks{display:flex;gap:8px;overflow-x:auto;padding:14px 0 6px;scrollbar-width:thin}
+    .cartridge{position:relative;flex:0 0 96px;height:74px;border:0;border-radius:5px;text-align:left;padding:0;box-shadow:0 3px 0 #000;overflow:hidden}
+    .cartridge[aria-selected=true]{box-shadow:0 0 0 2px var(--paper),0 4px 0 #000;transform:translateY(-2px)}
+    .c-iso{position:absolute;left:8px;top:13px;font:700 30px/1 Barlow,Impact,sans-serif}
+    .c-name{position:absolute;left:8px;right:6px;bottom:8px;font:700 8.5px/1 var(--mono);letter-spacing:.16em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .c-kanji{position:absolute;right:7px;top:7px;font-size:14px;opacity:.75}
+    .c-flag{position:absolute;right:6px;bottom:6px;width:15px;height:15px;border-radius:50%;background:#e2572f;color:#fff;font:700 10px/15px var(--mono);text-align:center}
+    .card{position:relative;border-radius:6px;padding:14px;margin-top:10px;overflow:hidden;box-shadow:0 3px 0 #000;display:grid;gap:6px}
+    .k-big{position:absolute;right:6px;top:-14px;font-size:120px;font-weight:700;opacity:.14;line-height:1.2;pointer-events:none}
+    .k-name{font:800 11px/1 var(--mono);letter-spacing:.22em}
+    .k-iso{font:700 88px/.9 Barlow,Impact,sans-serif}
+    .card p{margin:0;font-size:13px;font-weight:500;line-height:1.4;max-width:34ch}
+    .k-meta{font:600 9px/1.5 var(--mono);letter-spacing:.06em;opacity:.85;overflow-wrap:anywhere}.k-meta.dim{opacity:.6}
+    .verdict{margin-top:12px;padding:11px 12px;border-radius:5px;background:#16241a;border:1px solid #3c6b47;font:400 11px/1.6 var(--mono);display:grid;gap:3px}
+    .verdict strong{letter-spacing:.14em;font-size:10px;color:#b9d6b4}
+    .verdict.bad{background:#2a1712;border-color:#8a4029}.verdict.bad strong{color:#f0a184}
+    .verdict ul{margin:4px 0;padding-left:18px}.verdict span{color:var(--quiet)}
+    .actions{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}
+    .actions button{min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:4px;background:none;font:700 10px/1 var(--mono);letter-spacing:.12em}
+    .actions button:hover{background:#f3f1ec12}
+    .params{margin-top:16px;border-top:1px solid var(--line);padding-top:10px}
+    .params h3{font:700 10px/1 var(--mono);letter-spacing:.24em;color:var(--quiet);margin:0 0 8px}
+    .params dl{margin:0;display:grid;grid-template-columns:118px minmax(0,1fr);gap:5px 12px;font:400 11px/1.5 var(--mono)}
+    .params dt{color:var(--quiet);letter-spacing:.06em}.params dd{margin:0;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+    @media(max-width:480px){.params dl{grid-template-columns:96px minmax(0,1fr)}}
+    @media(prefers-reduced-motion:reduce){.key:active:not(:disabled){transform:none}}
+  </style>
+  <script src="tester.js?v=1" type="module"></script>
+</head>
+<body class="empty">
+  <main class="page">
+    <section class="camera" aria-label="Viewfinder">
+      <span class="eyebrow">KURO / STOCK TESTER</span>
+      <h1 id="title">NO STOCK</h1>
+      <div class="sub" id="motion">DROP A STOCK FILE TO BEGIN</div>
+      <div class="finder">
+        <canvas id="film" aria-label="The picture developed on the selected stock"></canvas>
+        <video id="video" playsinline muted></video>
+        <div id="labels"></div>
+        <div class="brackets" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+        <div class="blank">NO STOCK LOADED.<br>DROP A .JSON FILE ANYWHERE,<br>OR PASTE ONE.</div>
+        <div class="blank gl">THIS BROWSER CAN'T DRAW THE FILM (NO WEBGL 2).</div>
+      </div>
+      <div class="hud"><span id="anatomy">LIVE</span><span id="camera-status">Showing the test scene.</span></div>
+      <div class="controls">
+        <button class="key primary" id="shoot" disabled>SHOOT LOOP</button>
+        <button class="key" id="camera">START CAMERA</button>
+        <button class="key" id="all" aria-pressed="false" disabled>ALL STOCKS</button>
+        <button class="key" id="mirror" aria-pressed="true">MIRROR</button>
+        <label class="ev">EV <input id="ev" type="range" min="-6" max="6" step="1" value="0" aria-label="Exposure, in thirds of a stop"> <output id="ev-value" for="ev">±0</output></label>
+      </div>
+      <p class="note">The picture is developed in this browser. Nothing is uploaded.</p>
+    </section>
+
+    <section aria-label="Stocks">
+      <h2>Stocks</h2>
+      <p class="lede">Drop a stock's .json file anywhere on this page, or paste its JSON. One stock, a list, or a file of several all work. Stocks stay in this browser until you clear them.</p>
+      <div class="drop">
+        <label class="eyebrow" for="paste">PASTE JSON</label>
+        <textarea id="paste" spellcheck="false" placeholder='{ "id": "…", "name": "…", "curves": [ … ] }' style="margin-top:8px"></textarea>
+        <div class="controls">
+          <button class="key primary" id="add">ADD</button>
+          <span class="key filekey">CHOOSE FILES<input id="file" type="file" accept=".json,application/json" multiple aria-label="Choose stock files"></span>
+          <button class="key" id="clear">CLEAR ALL</button>
+        </div>
+        <p id="report" role="status" aria-live="polite"></p>
+      </div>
+      <div id="stocks" role="listbox" aria-label="Loaded stocks"></div>
+      <div id="detail"></div>
+    </section>
+  </main>
+</body>
+</html>

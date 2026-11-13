@@ -201,6 +201,11 @@ async function initMaterial() {
   gl.uniform1i(uniforms.letters, 0); gl.uniform2f(uniforms.maskSize, mask.width, mask.height); gl.uniform1f(uniforms.distanceRange, mask.range);
   let width = 1, height = 1, logo = [0,0,1,1], target = [0,0], pointer = [0,0], press = 0;
   let lastTime = performance.now(), animationTime = 5.2, lastDraw = 0, raf = 0, lost = false;
+  // With a mouse, the light follows the cursor. Once the cursor has been still for a second it
+  // glides to rest as though the cursor were at the far left and bottom, and comes back to the
+  // cursor when it next moves.
+  const idleAfter = 1000, rest = [-1, 1];
+  let cursor = [0,0], lastMove = performance.now(), idle = false;
   const draw = () => {
     gl.uniform2f(uniforms.resolution, canvas.width, canvas.height); gl.uniform2f(uniforms.cssSize, width, height);
     gl.uniform4f(uniforms.logo, ...logo); gl.uniform2f(uniforms.pointer, ...pointer);
@@ -217,8 +222,15 @@ async function initMaterial() {
     if (automaticTilt.matches) {
       const phase = animationTime * .28;
       target = paused ? [0,0] : [Math.sin(phase), Math.sin(phase * .73 + Math.PI / 3)];
+      idle = false;
+    } else {
+      // Holding the wordmark counts as using it. Reduced motion never moves on its own.
+      if (isHeld) lastMove = now;
+      idle = !reducedMotion.matches && now - lastMove >= idleAfter;
+      target = idle ? rest : cursor;
     }
-    const blend=reducedMotion.matches?1:1-Math.exp(-dt*6);
+    // Going to rest is a slow glide; following the cursor, and returning to it, is quick.
+    const blend=reducedMotion.matches?1:1-Math.exp(-dt*(idle?1.5:6));
     pointer[0]+=(target[0]-pointer[0])*blend;pointer[1]+=(target[1]-pointer[1])*blend;
     press+=((isHeld?1:0)-press)*(reducedMotion.matches?1:1-Math.exp(-dt*12));
     pulse=Math.max(0,pulse-dt*.8);
@@ -234,9 +246,9 @@ async function initMaterial() {
     logo=[bounds.left-rect.left,bounds.top-rect.top,bounds.width,bounds.height];draw();wake();
   };
   const observer=new ResizeObserver(resize);observer.observe(scene);observer.observe(word);
-  const pointerMove=event=>{if(automaticTilt.matches)return;const r=scene.getBoundingClientRect();target=[(event.clientX-r.left)/r.width*2-1,(event.clientY-r.top)/r.height*2-1];wake();};
-  const pointerLeave=()=>{target=[0,0];wake();};
-  const tiltModeChange=()=>{target=[0,0];wake();};
+  const pointerMove=event=>{if(automaticTilt.matches)return;const r=scene.getBoundingClientRect();target=cursor=[(event.clientX-r.left)/r.width*2-1,(event.clientY-r.top)/r.height*2-1];lastMove=performance.now();wake();};
+  const pointerLeave=()=>{target=cursor=[0,0];wake();};
+  const tiltModeChange=()=>{target=cursor=[0,0];lastMove=performance.now();wake();};
   automaticTilt.addEventListener('change',tiltModeChange);
   scene.addEventListener('pointermove',pointerMove,{passive:true});scene.addEventListener('pointerleave',pointerLeave);
   const visibility=()=>{if(document.hidden){cancelAnimationFrame(raf);raf=0;}else wake();};

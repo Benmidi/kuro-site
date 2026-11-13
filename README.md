@@ -18,7 +18,9 @@ uses the app tab bar's material vocabulary; it is a browser approximation of
 those materials rather than a direct port of the Metal pipeline.
 
 The centered wordmark is capped at 500px wide and scales down with the viewport.
-Move the pointer to shift the lighting and parallax. Mobile layouts and touch-only
+Move the pointer to shift the lighting and parallax. After a second without
+pointer movement the lighting glides to rest as though the pointer were at the
+far left and bottom, and returns to the pointer when it moves again. Mobile layouts and touch-only
 devices automatically drift through the full mouse tilt range on both axes.
 Hold the wordmark, or hold Space/Enter while focused, to bring the LCDs closer
 to the acrylic. The

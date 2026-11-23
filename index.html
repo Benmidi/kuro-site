@@ -4,18 +4,18 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111213">
-  <meta name="description" content="KURO. For the moments in between. A new camera, coming soon.">
+  <meta name="description" content="KURO. For the moments in between. Join the camera beta.">
   <meta property="og:title" content="KURO — For the moments in between.">
-  <meta property="og:description" content="A new camera. Coming soon. Stay in the loop.">
+  <meta property="og:description" content="Sign up for the KURO camera beta on iPhone and Android.">
   <meta property="og:image" content="https://benmidi.github.io/kuro-site/assets/social-preview.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://benmidi.github.io/kuro-site/">
   <title>KURO — For the moments in between.</title>
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="preload" href="assets/barlow-700.ttf" as="font" type="font/ttf" crossorigin>
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
   <script src="app.js?v=6" type="module"></script>
-  <script src="waitlist.js" type="module"></script>
+  <script src="waitlist.js?v=2" type="module"></script>
 </head>
 <body>
   <a class="skip-link" href="#email">Skip to signup</a>
@@ -25,7 +25,7 @@
     <i class="fastener top-left" aria-hidden="true"></i><i class="fastener top-right" aria-hidden="true"></i>
     <i class="fastener bottom-left" aria-hidden="true"></i><i class="fastener bottom-right" aria-hidden="true"></i>
     <header class="masthead">
-      <span class="coming-soon"><i></i> A NEW CAMERA. COMING SOON.</span>
+      <span class="coming-soon"><i></i> A NEW CAMERA. IN BETA.</span>
     </header>
 
     <div class="word-area">
@@ -34,13 +34,13 @@
     </div>
 
     <section class="signup" aria-labelledby="signup-title">
-      <h2 id="signup-title">Stay in the loop.</h2>
+      <h2 id="signup-title">Get the beta links by email.</h2>
       <form id="waitlist-form" method="post">
         <label class="sr-only" for="email">Your email address</label>
-        <div class="email-row"><input id="email" name="email" type="email" placeholder="Your email address" autocomplete="email" maxlength="254" required><button type="submit" class="join-button" disabled aria-label="Join the early-access list"><span aria-hidden="true">↗</span></button></div>
-        <div class="form-bottom"><fieldset><legend class="sr-only">Your device</legend><label><input type="radio" name="platform" value="ios" checked><span>iOS</span></label><label><input type="radio" name="platform" value="android"><span>Android</span></label><label><input type="radio" name="platform" value="both"><span>Both</span></label></fieldset><span class="launch-note">JUST THE LAUNCH. NO NOISE.</span></div>
+        <div class="email-row"><input id="email" name="email" type="email" placeholder="Your email address" autocomplete="email" maxlength="254" required><button type="submit" class="join-button" disabled aria-label="Email me the beta links"><span aria-hidden="true">↗</span></button></div>
+        <div class="form-bottom"><fieldset><legend class="sr-only">Your device</legend><label><input type="radio" name="platform" value="ios" checked><span>iOS</span></label><label><input type="radio" name="platform" value="android"><span>Android</span></label><label><input type="radio" name="platform" value="both"><span>Both</span></label></fieldset><span class="launch-note">BETA INVITE + LAUNCH NEWS</span></div>
         <div class="honey" aria-hidden="true"><label for="website">Website</label><input name="website" id="website" tabindex="-1" autocomplete="off"></div>
-        <p id="form-status" role="status" aria-live="polite"></p><noscript><p class="no-script">Enable JavaScript to join the list.</p></noscript>
+        <div id="signup-result"><p id="form-status" role="status" aria-live="polite"></p><div id="beta-links" hidden><a href="https://testflight.apple.com/join/BgCW6c2Y">iPhone · TestFlight</a> &nbsp; <a href="https://play.google.com/apps/internaltest/4700583040949326018">Android · approved testers</a></div></div><noscript><p class="no-script">Enable JavaScript to join the list.</p></noscript>
       </form>
     </section>
     <footer class="footer"><span>IN DEVELOPMENT / iOS + ANDROID</span><button id="privacy-open" type="button">Privacy & removal</button><span class="serial">KU—000001</span></footer>
@@ -49,9 +49,9 @@
     <button class="dialog-close" id="privacy-close" aria-label="Close privacy notice">×</button>
     <span class="dialog-eyebrow">KURO / EARLY ACCESS</span>
     <h2 id="privacy-title">Your email stays yours.</h2>
-    <p>Joining the list opts you into KURO early-access and launch updates. We store your email, device preference, and signup time in Kuro’s Supabase database while the early-access list is in use. We don’t sell the list or use tracking pixels.</p>
+    <p>Signing up sends you the beta links and opts you into KURO launch updates. Android installs require an approved Google Play tester account. We store your email, device preference, and signup time in Kuro’s Supabase database while the early-access list is in use. We don’t sell the list or use tracking pixels.</p>
     <p>A salted hash of your network address limits automated signups. Your raw network address is not stored in the waitlist. Hosting providers may keep their own operational logs.</p>
-    <p>To leave, enter the same email below.</p>
+    <p>To leave, follow the unsubscribe link in your invitation or enter the same email below.</p>
     <form id="removal-form"><label for="removal-email">Email to remove</label><input type="email" id="removal-email" required maxlength="254" autocomplete="email"><button class="remove-button" type="submit">Remove my email <span aria-hidden="true">↗</span></button><p id="removal-status" role="status"></p></form>
   </dialog>
 </body>

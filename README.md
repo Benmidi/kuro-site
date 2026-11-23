@@ -38,14 +38,11 @@ interactions so changes to the visual do not affect the backend contract.
 `waitlist.js` calls the `kuro-waitlist` Supabase Edge Function in KuroApp. No API key
 is included in the public site. The function uses its environment's service-role
 key to call a service-only SQL function. The migration enables RLS and revokes
-all visitor access to the email and limiter tables. Existing addresses are not
-disclosed, duplicated, or modified on a second signup. No emails are sent by
-this endpoint; sending launch invitations is a separate future task.
+all visitor access to the email and limiter tables. Submitting the form sends a branded HTML and plain-text invitation with both beta links through Resend. The selected device is listed first. Google Play checks its own internal tester list. Signing up here does not grant Android tester access.
 
-The form records email, device preference and signup time. The privacy dialog
-allows email removal. Removal deliberately requires only knowing the exact
-email and is rate limited; this is suitable for a low-stakes waitlist, not an
-account or authenticated subscription system. All responses are non-enumerating.
+Set the Edge Function secrets `RESEND_API_KEY` (sending access on the verified domain) and `KURO_INVITE_FROM` (verified sender) before enabling email delivery. Until both secrets are present, signup saves the address and displays the install links on the page. Keep open and click tracking off on the sending domain. A successful send records the acceptance time; repeats reuse the original invitation. A failed send is retryable by resubmitting the form. The stable provider idempotency key covers concurrent submissions and retries within Resend’s 24-hour window. Historical entries receive an invite only if submitted again.
+
+Each invitation links to `unsubscribe/` with a random subscription ID in the URL fragment. Opening the page has no side effects. Confirming posts the token and deletes the matching subscription. Repeated confirmations succeed; an old link cannot affect a later signup. The privacy dialog retains the existing address-removal option.
 
 Abuse mitigation: bounded request size, validation, allowed origins, honeypot,
 and an atomic database limit of eight requests per network bucket per hour.
@@ -71,9 +68,7 @@ Run `scripts/publish-website.sh` from the app checkout. It uses the existing `gh
 and Git login, clones the public marketing repo into ignored local work, copies
 only `website/`, commits and pushes it. GitHub Pages deploys the root of `main`.
 It never copies app code, `.git` metadata, Supabase source, environment files,
-or credentials. Review the public diff before calling the script when adding
-new site files. Download URLs should replace the early-access CTA only after
-real App Store/Play Store/TestFlight links exist.
+or credentials. Review the public diff before calling the script when adding new site files.
 
 ## Assets
 

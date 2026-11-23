@@ -1,25 +1,20 @@
+import { requestWaitlist } from './waitlist-api.js';
 const $ = (selector) => document.querySelector(selector);
 $('#waitlist-form [type=submit]').disabled = false;
-const waitlistEndpoint='https://rqirmprdejkkfvzhttco.supabase.co/functions/v1/kuro-waitlist';
-async function requestWaitlist(payload) {
-  const response=await fetch(waitlistEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(15000)});
-  if(!response.ok){
-    if(response.status===429)throw Error('A few too many attempts. Please try again in an hour.');
-    if(response.status===400)throw Error('Please check your email address and try again.');
-    throw Error('We couldn’t reach the list. Please try again in a moment.');
-  }
-  const data=await response.json();
-  if(data.ok!==true)throw Error('Your request wasn’t saved. Please try again.');
-}
 $('#waitlist-form').addEventListener('submit',async event=>{
   event.preventDefault();
   const form=event.currentTarget, button=form.querySelector('[type=submit]'), status=$('#form-status');
   if(button.disabled)return;
-  button.disabled=true; status.textContent='Saving your spot…'; status.dataset.error='false';
+  button.disabled=true; status.textContent='Sending your invitation…'; status.dataset.error='false';
+  const links=$('#beta-links');
+  links.hidden=true;
   const data=new FormData(form);
   try{
-    await requestWaitlist({email:String(data.get('email')).trim(),platform:data.get('platform'),website:data.get('website'),action:'join'});
-    status.textContent='You’re in. We’ll be in touch.';
+    const result=await requestWaitlist({email:String(data.get('email')).trim(),platform:data.get('platform'),website:data.get('website'),action:'join'});
+    if(result.delivery==='unconfigured'){
+      status.textContent='You’re on the list. Email delivery is being set up. You can use the beta links here.';
+      links.hidden=false;
+    }else status.textContent='Check your inbox for your KURO beta invitation. If you signed up before, look for the original email.';
     form.reset();
   }catch(error){status.textContent=error.message;status.dataset.error='true';}
   finally{button.disabled=false;}

@@ -177,6 +177,8 @@ export function problems(s) {
     if (a.style != null && typeof a.style !== 'string') out.push('Card "style" must be text');
   }
   if (isObject(s.pair)) check(s.pair, PAIR, 'Pair', out);
+  // How its posts fade on the feed: "light" or "dark". Left out, or a word the apps don't know, is dark.
+  if (s.fades != null && typeof s.fades !== 'string') out.push('"fades" must be text');
   if (s.cadence != null) out.push(...cadenceProblems(s.cadence));
   if (s.season != null && check(s.season, SEASON, 'Season', out)) {
     check(s.season.open, MONTH_DAY, 'Season open', out);

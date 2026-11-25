@@ -71,6 +71,7 @@
         <label class="tag" for="search">HANDLE OR USER ID</label>
         <input id="search" type="search" spellcheck="false" autocomplete="off" maxlength="36" placeholder="@handle">
         <p class="quiet" id="people-status" role="status"></p>
+        <button class="key" id="my-account" type="button">MY ACCOUNT</button>
         <ul id="people"></ul>
       </aside>
       <section class="loops" aria-label="Loops">
@@ -78,6 +79,8 @@
           <h2 id="person-name"></h2>
           <p class="mono" id="person-id"></p>
           <p class="quiet" id="person-counts"></p>
+          <button class="key" id="push-test" type="button">SEND TEST NOTIFICATION</button>
+          <p class="quiet" id="push-test-status" role="status" aria-live="polite"></p>
         </div>
         <p class="quiet" id="loops-status" role="status">Pick someone to see every loop they have put in the feed.</p>
         <div class="grid" id="grid"></div>
@@ -85,7 +88,7 @@
       </section>
     </section>
 
-    <p class="foot">Searches and the accounts you open are logged with your user ID. Kept loops that were never posted are not shown here and can't be read from here.</p>
+    <p class="foot">Searches, accounts you open, and test sends are logged with your user ID. Kept loops that were never posted are not shown here and can't be read from here.</p>
   </main>
 
   <dialog id="viewer" aria-label="Loop">

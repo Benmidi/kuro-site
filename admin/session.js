@@ -192,6 +192,9 @@ export const personLoops = (user, after) => rpc('admin_person_loops', {
   p_user: user, p_limit: 24, ...(after ? { p_after: after.published_at, p_after_id: after.id } : {}),
 });
 
+export const enqueuePushTest = (user, requestId) => rpc('admin_enqueue_push_test', { p_user: user, p_request: requestId });
+export const pushTestStatus = requestId => rpc('admin_push_test_status', { p_request: requestId });
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** A loop's frames file, as a response to read from. The ids come from the database, but check anyway. */

@@ -25,7 +25,7 @@ const explain = error => (error?.status === 403 || error?.code === '42501'
   : error?.message || 'Something went wrong.');
 const date = iso => new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 const shortId = id => id.slice(0, 8);
-const nameOf = person => (person.handle ? '@' + person.handle : shortId(person.user_id) + '…');
+const nameOf = person => person.handle ? '@' + person.handle : person.self ? 'My account' : shortId(person.user_id) + '…';
 
 // MARK: Getting in
 
@@ -195,10 +195,15 @@ $('search').addEventListener('input', () => {
 // MARK: A person's loops
 
 let tail = null, loopsRun = 0;
+let pushRequest = null, pushTimer = 0;
 const cards = new Map();   // card element → { row, player, abort, state }
 
 function clearLoops() {
   loopsRun += 1;
+  clearTimeout(pushTimer);
+  pushRequest = null;
+  $('push-test').disabled = false;
+  $('push-test-status').textContent = '';
   for (const [card, entry] of cards) { watcher.unobserve(card); unload(entry); }
   cards.clear();
   queue.length = 0;
@@ -217,10 +222,61 @@ async function openPerson(person) {
   }
   $('person-name').textContent = nameOf(person);
   $('person-id').textContent = person.user_id;
-  $('person-counts').textContent = counts(person);
+  $('person-counts').textContent = person.self ? '' : counts(person);
   $('person').hidden = false;
   await morePages();
 }
+
+$('my-account').addEventListener('click', () => {
+  const user_id = api.me().sub;
+  if (user_id) return openPerson({ user_id, self: true });
+});
+
+function showPushStatus(result, run) {
+  const status = $('push-test-status');
+  const button = $('push-test');
+  if (!result) {
+    status.textContent = 'This test is no longer available.';
+  } else if (result.pending) {
+    status.textContent = `Still processing ${result.pending} device${result.pending === 1 ? '' : 's'}.`;
+    pushTimer = setTimeout(async () => {
+      try {
+        const latest = await api.pushTestStatus(pushRequest);
+        if (run === loopsRun) showPushStatus(latest, run);
+      } catch (error) {
+        if (run === loopsRun) {
+          status.textContent = explain(error);
+          button.disabled = false;
+        }
+      }
+    }, 5000);
+    return;
+  } else if (!(result.accepted + result.skipped + result.failed)) {
+    status.textContent = 'No eligible devices are registered for this account.';
+  } else {
+    status.textContent = `Firebase accepted ${result.accepted}. Skipped ${result.skipped}, failed ${result.failed}.`;
+  }
+  pushRequest = null;
+  button.disabled = false;
+}
+
+$('push-test').addEventListener('click', async () => {
+  const run = loopsRun, person = current;
+  const button = $('push-test'), status = $('push-test-status');
+  if (!person || button.disabled || !window.confirm(`Send a KURO test notification to devices registered to ${nameOf(person)}?`)) return;
+  pushRequest ||= crypto.randomUUID();
+  button.disabled = true;
+  status.textContent = 'Queuing test…';
+  try {
+    const result = await api.enqueuePushTest(person.user_id, pushRequest);
+    if (run === loopsRun) showPushStatus(result, run);
+  } catch (error) {
+    if (run === loopsRun) {
+      status.textContent = explain(error);
+      button.disabled = false;
+    }
+  }
+});
 
 async function morePages() {
   const run = loopsRun, person = current;

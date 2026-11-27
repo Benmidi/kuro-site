@@ -2,7 +2,7 @@
 // put in the feed. What the page may read is decided by the database (see session.js); this file
 // is only the screen. Text from the backend is always set as text, never as markup.
 
-import * as api from './session.js';
+import * as api from './session.js?v=2';
 import { Player, bitmaps, frameSize, unpack } from './loops.js';
 
 // Refuse to run inside someone else's page, where clicks could be steered.
@@ -99,6 +99,7 @@ async function leave(reason) {
   show('gate-sign-in');
   closeViewer();
   clearLoops();
+  clearCampaigns();
   $('people').replaceChildren();
   $('person').hidden = true;
   $('qr').removeAttribute('src');
@@ -158,6 +159,7 @@ let searchTimer = 0, searchRun = 0, current = null;
 async function openApp() {
   show('app');
   awake();
+  void openCampaigns(screenRun);
   await search('');
 }
 
@@ -403,6 +405,172 @@ function closeViewer() {
 $('viewer-close').addEventListener('click', closeViewer);
 $('viewer').addEventListener('close', closeViewer);
 $('viewer').addEventListener('click', event => { if (event.target === $('viewer')) closeViewer(); });
+
+// MARK: Push campaigns
+
+let campaignRun = 0, historyRun = 0, campaignPreview = null, previewRequest = null, testRequest = null;
+
+function clearCampaigns() {
+  ++historyRun;
+  $('compose-notification').hidden = true;
+  $('campaigns').hidden = true;
+  $('campaign-history').replaceChildren();
+  $('campaign-history-status').textContent = '';
+  $('campaign-form').reset();
+  campaignChanged();
+}
+
+async function openCampaigns(run) {
+  try {
+    const enabled = await api.pushCampaignEnabled();
+    if (run !== screenRun || !enabled) return;
+    $('campaigns').hidden = false;
+    $('compose-notification').hidden = false;
+    await campaignHistory();
+  } catch (error) {
+    // The same page supports servers that still have only the generic test send.
+    if (run === screenRun && error?.status !== 404 && !(error instanceof api.SessionChanged)) {
+      notice(explain(error));
+    }
+  }
+}
+
+function campaignChanged() {
+  ++campaignRun;
+  campaignPreview = null;
+  previewRequest = null;
+  testRequest = null;
+  $('campaign-preview-button').disabled = false;
+  $('campaign-actions').hidden = true;
+  $('campaign-action-status').textContent = '';
+  $('campaign-status').textContent = '';
+  $('campaign-confirm').value = '';
+  $('campaign-preview-title').textContent = $('campaign-title').value.trim();
+  $('campaign-preview-body').textContent = $('campaign-body').value.trim();
+  const mode = $('campaign-delivery').value;
+  $('campaign-time-label').hidden = mode === 'now';
+  $('campaign-time').disabled = mode === 'now';
+  $('campaign-time').required = mode !== 'now';
+  $('campaign-time-zone').textContent = mode === 'recipient' ? 'RECIPIENT LOCAL DATE AND TIME'
+    : `DATE AND TIME · ${Intl.DateTimeFormat().resolvedOptions().timeZone}`;
+}
+
+$('campaign-form').addEventListener('input', campaignChanged);
+$('campaign-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if ($('campaigns').hidden) return;
+  const run = ++campaignRun;
+  const request = previewRequest ||= crypto.randomUUID();
+  const mode = $('campaign-delivery').value, dateTime = $('campaign-time').value;
+  $('campaign-preview-button').disabled = true;
+  $('campaign-actions').hidden = true;
+  $('campaign-status').textContent = 'Checking eligible accounts…';
+  try {
+    const summary = await api.previewPushCampaign({
+      p_request: request, p_title: $('campaign-title').value, p_body: $('campaign-body').value,
+      p_audience: $('campaign-audience').value, p_platform: $('campaign-platform').value,
+      p_category: $('campaign-category').value,
+      p_send_at: mode === 'scheduled' ? new Date(dateTime).toISOString() : null,
+      p_local_at: mode === 'recipient' ? dateTime : null,
+    });
+    if (run !== campaignRun) return;
+    campaignPreview = { ...summary, request };
+    $('campaign-status').textContent = `Up to ${summary.users} eligible accounts · ${summary.devices} devices. Excluded: ${summary.inactive} inactive, ${summary.opted_out} opted out, ${summary.no_eligible_device} without an eligible device.`;
+    $('campaign-confirm-label').hidden = !summary.confirmation;
+    $('campaign-confirm-prompt').textContent = summary.confirmation ? `Type ${summary.confirmation} to confirm` : '';
+    $('campaign-confirm').value = '';
+    $('campaign-schedule').disabled = !summary.users;
+    $('campaign-test').disabled = false;
+    $('campaign-actions').hidden = false;
+  } catch (error) {
+    if (run === campaignRun) {
+      $('campaign-status').textContent = explain(error);
+      if (error?.code === '22023') previewRequest = null;
+    }
+  } finally {
+    if (run === campaignRun) $('campaign-preview-button').disabled = false;
+  }
+});
+
+$('campaign-test').addEventListener('click', async () => {
+  if (!campaignPreview || !window.confirm('Send the test message to your own eligible devices?')) return;
+  const run = campaignRun, button = $('campaign-test'), status = $('campaign-action-status');
+  button.disabled = true;
+  try {
+    const result = await api.testPushCampaign(campaignPreview.request, testRequest ||= crypto.randomUUID());
+    if (run !== campaignRun) return;
+    testRequest = null;
+    status.textContent = `Test queued for ${result.devices} devices.`;
+    await campaignHistory();
+  } catch (error) {
+    if (run === campaignRun) status.textContent = explain(error);
+  } finally {
+    if (run === campaignRun) button.disabled = false;
+  }
+});
+
+$('campaign-schedule').addEventListener('click', async () => {
+  if (!campaignPreview?.users) return;
+  const run = campaignRun, button = $('campaign-schedule'), status = $('campaign-action-status');
+  const confirmation = $('campaign-confirm').value.trim();
+  if (campaignPreview.confirmation && campaignPreview.confirmation !== confirmation) {
+    status.textContent = 'Enter the confirmation phrase shown above.';
+    $('campaign-confirm').focus();
+    return;
+  }
+  if (!window.confirm(`Queue this campaign for up to ${campaignPreview.users} accounts?`)) return;
+  button.disabled = true;
+  try {
+    await api.schedulePushCampaign(campaignPreview.request, confirmation || null);
+    if (run !== campaignRun) return;
+    campaignChanged();
+    $('campaign-status').textContent = 'Campaign queued.';
+    await campaignHistory();
+  } catch (error) {
+    if (run === campaignRun) {
+      button.disabled = false;
+      status.textContent = explain(error);
+      if (error?.code === '22023') previewRequest = null;
+    }
+  }
+});
+
+async function campaignHistory() {
+  const run = ++historyRun, screen = screenRun, status = $('campaign-history-status');
+  try {
+    const rows = await api.pushCampaignHistory();
+    if (run !== historyRun || screen !== screenRun) return;
+    status.textContent = rows.length ? '' : 'No campaigns or tests yet.';
+    $('campaign-history').replaceChildren(...rows.map(row => {
+      const state = row.cancelled_at ? 'Cancelled' : row.pending ? 'Pending' : 'Finished';
+      const node = el('li', {}, el('strong', { textContent: row.title }), el('p', {
+        className: 'quiet', textContent: `${date(row.created_at)} · ${state} · ${row.pending} pending · ${row.accepted} accepted by FCM · ${row.skipped} skipped · ${row.failed} failed`,
+      }));
+      if (row.kind === 'campaign') node.append(el('p', {
+        className: 'quiet', textContent: [row.audience, row.category, row.platform,
+          row.local_at ? `${row.local_at.replace('T', ' ')} recipient local` : row.send_at ? date(row.send_at) : 'As soon as allowed'].join(' · '),
+      }));
+      if (row.kind === 'campaign' && row.pending && !row.cancelled_at) {
+        const cancel = el('button', { className: 'key', type: 'button', textContent: 'CANCEL PENDING SENDS' });
+        cancel.addEventListener('click', async () => {
+          if (screen !== screenRun || !window.confirm('Cancel pending delivery? Messages already in flight may still arrive.')) return;
+          cancel.disabled = true;
+          try {
+            await api.cancelPushCampaign(row.id);
+            if (screen === screenRun) await campaignHistory();
+          } catch (error) {
+            if (screen === screenRun) { status.textContent = explain(error); cancel.disabled = false; }
+          }
+        });
+        node.append(cancel);
+      }
+      return node;
+    }));
+  } catch (error) {
+    if (run === historyRun && screen === screenRun) status.textContent = explain(error);
+  }
+}
+$('campaign-refresh').addEventListener('click', campaignHistory);
 
 // MARK: Start
 

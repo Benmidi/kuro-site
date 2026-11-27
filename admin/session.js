@@ -205,3 +205,12 @@ export function loopFile(row, signal) {
     credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer', signal,
   });
 }
+
+export const pushCampaignEnabled = () => rpc('admin_push_campaign_enabled');
+export const previewPushCampaign = params => rpc('admin_preview_push_campaign', params);
+export const schedulePushCampaign = (request, confirmation) => rpc('admin_schedule_push_campaign',
+  { p_request: request, p_confirmation: confirmation });
+export const testPushCampaign = (campaign, request) => rpc('admin_test_push_campaign',
+  { p_campaign: campaign, p_request: request });
+export const cancelPushCampaign = request => rpc('admin_cancel_push_campaign', { p_request: request });
+export const pushCampaignHistory = () => rpc('admin_push_campaign_history');
